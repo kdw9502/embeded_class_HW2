@@ -16,6 +16,10 @@
 #include <linux/jiffies.h>
 #include <asm/param.h>
 #include "common.h"
+#include "module.h"
+#include <math.h>
+#include <string.h>
+#include "fpga_dot_font.h"
 
 #define DEVICE_SET_MAJOR 242		
 #define DEVICE_SET_NAME "device_set"		
@@ -27,6 +31,10 @@
 
 static unsigned char *fnd_addr, *text_lcd_addr, *led_addr, *dot_addr;
 settings setting;
+
+char* student_num = "20141494";
+char* student_name = "KangDongWook";
+
 
 int device_set_file_ioctl(struct inode* minode, struct file* filp, unsigned int cmd, unsigned long arg);
 
@@ -54,16 +62,49 @@ int device_set_file_ioctl(struct inode* minode, struct file* filp, unsigned int 
 	}
 }
 
-void delay_ms(int ms)
+void delay()
 {
 
-	u64 endtime = get_jiffies() + setting.interval * HZ / 10;
+	u64 endtime = get_jiffies() + setting.interval * HZ / 1000;
 	while (get_jiffies() < endtime);
 }
 
 void excute_timer()
 {
+	int init = setting.init;
+	int displaying_value = 0;
+	int displaying_index = 3;
+	int cycle_count = 0;
+	int count;
 
+
+	while (displaying_value != 0)
+	{
+		displaying_value = init % 10;
+		init /= 10;
+		displaying_index--;
+	}
+
+	for (count = 0; count < setting.count; count++)
+	{
+		char fnd_val[4] = { 0, };
+		fnd_val[displaying_index] = displaying_value;
+		set_fnd(fnd_val);
+		set_led(1<<(7-displaying_value));
+		set_dot(fpga_number[displaying_value]);
+		set_text_lcd(cycle_count);
+		delay();
+		cycle_count++;
+		if (cycle_count % 8 == 0)
+		{
+			displaying_index = (displaying_index + 3) % 4;
+		}
+		displaying_value = (displaying_value - 1) % 8 + 1;
+		
+	}
+
+
+	
 }
 
 
@@ -88,10 +129,46 @@ int __init device_set_init(void)
 	return 0;
 }
 
-void set_text_lcd(unsigned char value[32])
+// text_lcd에서 좌우로 움직이는 글씨를 현재 싸이클에 맞는 위치로 복사한다.
+void set_moving_lcd_text(char* dest, char* text, int cycle_num)
 {
+	char str[16] = { 0, };
+	int max_offset = 16 - strlen(text);
+	// 최대 4칸을 움직일 수 있는 글씨의 경우, 01234321 순서대로의 칸수만큼 offset을 가진다.
+	// 현재 사이클이 01234321중 어떤 offset값의 인덱스를 가지는지 알기위해 0~7 사이의 inner_cycle 값을 가정한다.
+	int inner_cycle = cycle_num % (max_offset * 2);
+	int offset,i;
+
+	// 현재 offset 값을 계산한다.
+	if (inner_cycle >= max_offset)
+	{
+		offset = max_offset * 2 - inner_cycle;
+	}
+	else 
+	{
+		offset = inner_cycle;
+	}
+
+	//복사
+	memset(dest,' ', 16);
+
+	for (int i = 0; i < strlen(text); i++)
+	{
+		dest[offset + i] = text[i];
+	}
+
+}
+
+void set_text_lcd(int cycle_count)
+{
+	char str[33] = {0,};
 	int i;
+	
+	set_moving_lcd_text(str, student_name, cycle_count);
+	set_moving_lcd_text(str+16, student_name, cycle_count);
+	
 	unsigned short int value_short = 0;
+
 
 	for (i = 0; i < 32; i=i+2)
 	{

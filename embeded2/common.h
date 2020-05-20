@@ -3,7 +3,7 @@ typedef struct _settings
 {
 	char interval;
 	char count;
-	char init;
+	int init;
 }settings;
 
 #define IOCTL_MAGIC         'T'
