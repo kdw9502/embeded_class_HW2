@@ -36,11 +36,9 @@ char* student_num = "20141494";
 char* student_name = "KangDongWook";
 
 
-int device_set_file_ioctl(struct inode* minode, struct file* filp, unsigned int cmd, unsigned long arg);
-
 struct file_operations device_set_file_fops =
 {
-	.unlocked_ioctl = device_set_file_ioctl
+	.unlocked_ioctl = device_set_file_ioctl,
 };
 
 
