@@ -9,4 +9,5 @@ void set_fnd(unsigned char value[4]);
 void set_led(unsigned char value);
 
 void set_dot(unsigned char value[10]);
-int device_set_file_ioctl(struct inode* minode, struct file* filp, unsigned int cmd, unsigned long arg);
+int device_set_file_ioctl(struct file* filp, unsigned int cmd, unsigned long arg);
+void excute_timer();

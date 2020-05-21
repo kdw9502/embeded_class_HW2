@@ -15,14 +15,13 @@
 #include <linux/version.h>
 #include <linux/jiffies.h>
 #include <asm/param.h>
+#include <linux/string.h>
 #include "common.h"
 #include "module.h"
-#include <math.h>
-#include <string.h>
 #include "fpga_dot_font.h"
 
 #define DEVICE_SET_MAJOR 242		
-#define DEVICE_SET_NAME "device_set"		
+#define DEVICE_SET_NAME "dev_driver"		
 
 #define IOM_FND_ADDRESS 0x08000004 
 #define IOM_FPGA_TEXT_LCD_ADDRESS 0x08000090
@@ -42,17 +41,21 @@ struct file_operations device_set_file_fops =
 };
 
 
-int device_set_file_ioctl(struct inode* minode, struct file* filp, unsigned int cmd, unsigned long arg)
+int device_set_file_ioctl(struct file* filp, unsigned int cmd, unsigned long arg)
 {
+
+    //printk("ioctl %u %u %u %u\n",_IOC_TYPE(cmd),_IOC_NR(cmd), _IOC_DIR(cmd), _IOC_SIZE(cmd));
 	
 	switch (cmd)
 	{
 	case CMD_SETTING:
+                printk("cmd_setting\n");
 		if (copy_from_user(&setting, (void __user*)arg, sizeof(setting))) {
 			return -EFAULT;
 		}
 		break;
 	case CMD_EXCUTE:
+                printk("cmd_excute\n");
 		excute_timer();
 		
 		break;
@@ -63,20 +66,20 @@ int device_set_file_ioctl(struct inode* minode, struct file* filp, unsigned int 
 void delay()
 {
 
-	u64 endtime = get_jiffies() + setting.interval * HZ / 1000;
-	while (get_jiffies() < endtime);
+	u64 endtime = get_jiffies_64() + setting.interval * HZ / 10;
+	while (get_jiffies_64() < endtime);
 }
 
 void excute_timer()
 {
 	int init = setting.init;
 	int displaying_value = 0;
-	int displaying_index = 3;
+	int displaying_index = 4;
 	int cycle_count = 0;
 	int count;
 
 
-	while (displaying_value != 0)
+	while (displaying_value == 0 && displaying_index>0)
 	{
 		displaying_value = init % 10;
 		init /= 10;
@@ -88,16 +91,16 @@ void excute_timer()
 		char fnd_val[4] = { 0, };
 		fnd_val[displaying_index] = displaying_value;
 		set_fnd(fnd_val);
-		set_led(1<<(7-displaying_value));
+		set_led(1<<(8-displaying_value));
 		set_dot(fpga_number[displaying_value]);
 		set_text_lcd(cycle_count);
 		delay();
 		cycle_count++;
 		if (cycle_count % 8 == 0)
 		{
-			displaying_index = (displaying_index + 3) % 4;
+			displaying_index = (displaying_index + 1) % 4;
 		}
-		displaying_value = (displaying_value - 1) % 8 + 1;
+		displaying_value = (displaying_value) % 8 + 1;
 		
 	}
 
@@ -150,7 +153,7 @@ void set_moving_lcd_text(char* dest, char* text, int cycle_num)
 	//บนป็
 	memset(dest,' ', 16);
 
-	for (int i = 0; i < strlen(text); i++)
+	for ( i = 0; i < strlen(text); i++)
 	{
 		dest[offset + i] = text[i];
 	}
@@ -162,7 +165,7 @@ void set_text_lcd(int cycle_count)
 	char str[33] = {0,};
 	int i;
 	
-	set_moving_lcd_text(str, student_name, cycle_count);
+	set_moving_lcd_text(str, student_num, cycle_count);
 	set_moving_lcd_text(str+16, student_name, cycle_count);
 	
 	unsigned short int value_short = 0;
@@ -170,7 +173,7 @@ void set_text_lcd(int cycle_count)
 
 	for (i = 0; i < 32; i=i+2)
 	{
-		value_short = (value[i] & 0xFF) << 8 | value[i + 1] & 0xFF;
+		value_short = (str[i] & 0xFF) << 8 | str[i + 1] & 0xFF;
 		outw(value_short, (unsigned int)text_lcd_addr + i);
 	}
 
@@ -195,7 +198,7 @@ void set_dot(unsigned char value[10])
 	int i;
 	unsigned short int value_short = 0;
 
-	for (i = 0; i < length; i++)
+	for (i = 0; i < 10; i++)
 	{
 		value_short = value[i] & 0x7F;
 		outw(value_short, (unsigned int)dot_addr + i * 2);
@@ -208,7 +211,7 @@ void __exit device_set_exit(void)
 	iounmap(led_addr);
 	iounmap(text_lcd_addr);
 	iounmap(dot_addr);
-	unregister_chrdev(DEVICE_SET_MAJOR, IOM_FND_NAME);
+	unregister_chrdev(DEVICE_SET_MAJOR, DEVICE_SET_NAME);
 }
 
 module_init(device_set_init);

@@ -22,14 +22,14 @@ int main(int argc, char* argv[])
 		setting.init > 8000 || setting.init <= 0)
 	{
 		printf("Usage: ./%s TIMER_INTERVAL[1-100] TIMER_CNT[1-100] TIMER_INIT[0001-8000]", argv[0]);
+		return 0;
 	}
 	
-	int fd = open("dev/dev_driver", O_RDWR);
+	int fd = open("/dev/dev_driver", O_RDWR);
 	if (fd < 0) {
-		perror("/dev/inter error");
-		exit(-1);
+		perror("/dev/dev_driver error");
+		return -1;
 	}
-
 
 	// ¼³Á¤
 	ioctl(fd, CMD_SETTING, &setting);
