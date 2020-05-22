@@ -9,6 +9,13 @@
 
 int main(int argc, char* argv[])
 {
+    // arguments ê°œìˆ˜ ì²´í¬
+    if (argc < 4)
+    {
+        printf("Usage: %s TIMER_INTERVAL[1-100] TIMER_CNT[1-100] TIMER_INIT[0001-8000]", argv[0]);
+        return -1;
+    }
+
 	settings setting;
 	setting.interval = atoi(argv[1]);
 	setting.count = atoi(argv[2]);
@@ -16,13 +23,13 @@ int main(int argc, char* argv[])
 
 	
 
-	// arguments ¹üÀ§ Ã¼Å©
+	// arguments ë²”ìœ„ ì²´í¬
 	if (setting.interval > 100 || setting.interval <= 0 ||
 		setting.count > 100 || setting.count <= 0 ||
 		setting.init > 8000 || setting.init <= 0)
 	{
-		printf("Usage: ./%s TIMER_INTERVAL[1-100] TIMER_CNT[1-100] TIMER_INIT[0001-8000]", argv[0]);
-		return 0;
+		printf("Usage: %s TIMER_INTERVAL[1-100] TIMER_CNT[1-100] TIMER_INIT[0001-8000]", argv[0]);
+		return -1;
 	}
 	
 	int fd = open("/dev/dev_driver", O_RDWR);
@@ -31,11 +38,11 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	// ¼³Á¤
+	// ì„¤ì •
 	ioctl(fd, CMD_SETTING, &setting);
 
-	// µğ¹ÙÀÌ½º ±¸µ¿
-	ioctl(fd, CMD_EXCUTE);
+	// ë””ë°”ì´ìŠ¤ êµ¬ë™
+	ioctl(fd, CMD_EXECUTE);
 
 
 	close(fd);

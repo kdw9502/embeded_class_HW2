@@ -10,4 +10,5 @@ void set_led(unsigned char value);
 
 void set_dot(unsigned char value[10]);
 int device_set_file_ioctl(struct file* filp, unsigned int cmd, unsigned long arg);
-void excute_timer();
+void execute_timer();
+void set_text_lcd_blank();
